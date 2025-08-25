@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
 
-type CanvasStrokeStyle = string | CanvasGradient | CanvasPattern;
+
 
 interface SquaresProps {
   direction?: "diagonal" | "up" | "right" | "down" | "left";

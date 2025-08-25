@@ -10,21 +10,14 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Initialize the Gemini client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-interface PortfolioPageProps {
-  params: { username: string };
-}
+// NOTE: The PortfolioPageProps interface has been removed to fix the build error.
 
-/**
- * Extracts a list of known technologies from a given string (like a README).
- * @param readmeContent The string content to scan.
- * @returns An array of unique technologies found.
- */
+// ... (extractTechnologies function remains the same)
 function extractTechnologies(readmeContent: string): string[] {
   const techKeywords = [
     'Next.js', 'React', 'TypeScript', 'JavaScript', 'Tailwind CSS', 'shadcn/ui',
     'Vercel', 'Node.js', 'Python', 'Framer Motion', 'Docker', 'PostgreSQL',
     'MongoDB', 'Express', 'HTML', 'CSS', 'Gemini API', 'NextAuth.js', 'Prisma'
-    // Add any other technologies you want to detect here
   ];
   const foundTechs = new Set<string>();
   const contentLower = readmeContent.toLowerCase();
@@ -37,25 +30,13 @@ function extractTechnologies(readmeContent: string): string[] {
   return Array.from(foundTechs);
 }
 
-/**
- * Generates a short, first-person summary using the Gemini API.
- * @param user The user's GitHub profile data.
- * @param technologies A list of the user's key technologies.
- * @returns A promise resolving to the AI-generated summary string.
- */
+// ... (generateSummary function remains the same)
 async function generateSummary(user: GitHubUser, technologies: string[]): Promise<string> {
   if (!process.env.GEMINI_API_KEY) {
     return user.bio || "A passionate developer exploring new technologies.";
   }
-  
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-  const prompt = `Based on this developer's profile, write a professional and engaging summary in the first person. Keep it concise (around 30 words).
-  - Name: ${user.name || user.login}
-  - Bio: "${user.bio || 'A passionate developer.'}"
-  - Key Technologies: ${technologies.join(', ')}
-  
-  Generate the summary now:`;
-
+  const prompt = `Based on this developer's profile, write a professional and engaging summary in the first person. Keep it concise (around 30 words).\n- Name: ${user.name || user.login}\n- Bio: "${user.bio || 'A passionate developer.'}"\n- Key Technologies: ${technologies.join(', ')}\n\nGenerate the summary now:`;
   try {
     const result = await model.generateContent(prompt);
     return result.response.text();
@@ -65,9 +46,6 @@ async function generateSummary(user: GitHubUser, technologies: string[]): Promis
   }
 }
 
-/**
- * Fetches all necessary data for the portfolio page, including an AI summary.
- */
 async function getGitHubData(username: string): Promise<{ user: GitHubUser; repos: GitHubRepo[]; allTechnologies: string[]; summary: string } | null> {
   try {
     const userRes = await fetch(`https://api.github.com/users/${username}`, {
@@ -76,7 +54,6 @@ async function getGitHubData(username: string): Promise<{ user: GitHubUser; repo
     });
     if (!userRes.ok) return null;
     const user: GitHubUser = await userRes.json();
-
     const reposRes = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=12`, {
       headers: { Authorization: `token ${process.env.GITHUB_API_TOKEN}` },
       next: { revalidate: 3600 }
@@ -84,7 +61,6 @@ async function getGitHubData(username: string): Promise<{ user: GitHubUser; repo
     if (!reposRes.ok) return null;
     let initialRepos: GitHubRepo[] = await reposRes.json();
     initialRepos = initialRepos.filter(repo => !repo.fork);
-
     const reposWithTech = await Promise.all(
       initialRepos.map(async (repo) => {
         try {
@@ -99,31 +75,28 @@ async function getGitHubData(username: string): Promise<{ user: GitHubUser; repo
           } else {
             repo.technologies = [];
           }
-        } catch (e) {
+        } catch {
           repo.technologies = [];
         }
         return repo;
       })
     );
-    
     const allTechSet = new Set<string>();
     reposWithTech.forEach(repo => {
         if (repo.language) allTechSet.add(repo.language);
         repo.technologies?.forEach(tech => allTechSet.add(tech));
     });
     const limitedTechnologies = Array.from(allTechSet).slice(0, 10);
-    
     const summary = await generateSummary(user, limitedTechnologies);
-
     return { user, repos: reposWithTech, allTechnologies: limitedTechnologies, summary };
-
   } catch (error) {
     console.error("Failed to fetch GitHub data:", error);
     return null;
   }
 }
 
-export default async function PortfolioPage({ params }: PortfolioPageProps) {
+// ✅ This is the main fix for the build error
+export default async function PortfolioPage({ params }: { params: { username: string } }) {
   const data = await getGitHubData(params.username);
 
   if (!data) {
@@ -153,9 +126,9 @@ export default async function PortfolioPage({ params }: PortfolioPageProps) {
         <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">{user.name || user.login}</h1>
         <p className="mt-2 text-lg text-muted-foreground">{user.bio}</p>
         
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
           {allTechnologies.map((tech) => (
-            <Badge key={tech} variant="glass">
+            <Badge key={tech} variant="glass" className="flex justify-center text-center">
               {tech}
             </Badge>
           ))}
@@ -164,7 +137,7 @@ export default async function PortfolioPage({ params }: PortfolioPageProps) {
       
       <section className="container mx-auto max-w-2xl px-4 py-8">
         <p className="text-center text-lg italic text-muted-foreground md:text-xl">
-          {summary.trim()}
+          "{summary.trim()}"
         </p>
       </section>
 
