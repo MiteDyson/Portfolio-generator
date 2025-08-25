@@ -59,7 +59,7 @@ export function PortfolioForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Enter GitHub Username</CardTitle>
+        <CardTitle className="text-center">Enter GitHub Username</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -69,9 +69,8 @@ export function PortfolioForm() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>GitHub Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="shadcn" {...field} />
+                    <Input placeholder="Username" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
