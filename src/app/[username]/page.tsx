@@ -147,7 +147,7 @@ export default async function PortfolioPage({ params }: { params: { username: st
       
       <section className="container mx-auto max-w-2xl px-4 py-8">
         <p className="text-center text-lg italic text-muted-foreground md:text-xl">
-          "{summary.trim()}"
+          {summary.trim()}
         </p>
       </section>
 
