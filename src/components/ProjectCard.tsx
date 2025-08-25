@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Github, Star, GitFork, Sparkles, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Github, Star, GitFork, Sparkles, Loader2, ExternalLink } from "lucide-react";
 import { GitHubRepo } from "@/lib/types";
 
 interface ProjectCardProps {
@@ -30,9 +31,8 @@ export function ProjectCard({ repo }: ProjectCardProps) {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to generate description");
-      }
+      if (!response.ok) throw new Error("Failed to generate description");
+      
       const data = await response.json();
       setDescription(data.description);
       toast.success("Description generated successfully!");
@@ -45,22 +45,31 @@ export function ProjectCard({ repo }: ProjectCardProps) {
     }
   };
 
+  // Combine primary language with other techs, ensuring no duplicates
+  const allTechs = Array.from(new Set([
+    ...(repo.language ? [repo.language] : []), 
+    ...(repo.technologies || [])
+  ]));
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      whileHover={{ scale: 1.03, y: -5 }}
+      className="h-full"
     >
-      <Card className="flex h-full flex-col">
+      <Card className="flex h-full flex-col transition-shadow duration-300 hover:shadow-lg hover:shadow-primary/20">
         <CardHeader>
           <CardTitle className="text-xl">{repo.name}</CardTitle>
           <CardDescription className="min-h-[40px]">{description}</CardDescription>
         </CardHeader>
         <CardContent className="flex-grow">
-          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-            {repo.language && <p>Language: {repo.language}</p>}
+          <div className="mb-4 flex flex-wrap gap-2">
+            {allTechs.map((tech, index) => (
+              <Badge key={tech} variant={index === 0 ? "default" : "secondary"}>
+                {tech}
+              </Badge>
+            ))}
           </div>
-          <div className="mt-2 flex items-center space-x-4 text-sm">
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
             <div className="flex items-center">
               <Star className="mr-1 h-4 w-4" /> {repo.stargazers_count}
             </div>
@@ -69,18 +78,23 @@ export function ProjectCard({ repo }: ProjectCardProps) {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" asChild>
-            <a href={repo.html_url} target="_blank" rel="noopener noreferrer">
-              <Github className="mr-2 h-4 w-4" /> GitHub
-            </a>
-          </Button>
-          <Button onClick={handleGenerateDescription} disabled={isGenerating}>
-            {isGenerating ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="mr-2 h-4 w-4" />
+        <CardFooter className="flex-wrap justify-between gap-2 pt-4">
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <a href={repo.html_url} target="_blank" rel="noopener noreferrer">
+                <Github className="mr-2 h-4 w-4" /> GitHub
+              </a>
+            </Button>
+            {repo.homepage && (
+              <Button variant="secondary" asChild>
+                <a href={repo.homepage} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="mr-2 h-4 w-4" /> View Live
+                </a>
+              </Button>
             )}
+          </div>
+          <Button onClick={handleGenerateDescription} disabled={isGenerating} size="sm">
+            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             AI Describe
           </Button>
         </CardFooter>
