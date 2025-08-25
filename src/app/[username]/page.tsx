@@ -95,7 +95,6 @@ async function getGitHubData(username: string): Promise<{ user: GitHubUser; repo
   }
 }
 
-// ✅ This is the main fix for the build error
 export default async function PortfolioPage({ params }: { params: { username: string } }) {
   const data = await getGitHubData(params.username);
 
@@ -135,9 +134,10 @@ export default async function PortfolioPage({ params }: { params: { username: st
         </div>
       </header>
       
-      <section className="container mx-auto max-w-2xl px-4 py-8">
+       <section className="container mx-auto max-w-2xl px-4 py-8">
         <p className="text-center text-lg italic text-muted-foreground md:text-xl">
-          "{summary.trim()}"
+      
+          {`"${summary.trim()}"`}
         </p>
       </section>
 
