@@ -1,3 +1,4 @@
+
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { ProjectCard } from "@/components/ProjectCard";
@@ -93,9 +94,9 @@ async function getGitHubData(username: string): Promise<{ user: GitHubUser; repo
     console.error("Failed to fetch GitHub data:", error);
     return null;
   }
-}
+}export default async function PortfolioPage({ params }: { params: { username: string } }) {
 
-export default async function PortfolioPage({ params }: { params: { username: string } }) {
+
   const data = await getGitHubData(params.username);
 
   if (!data) {

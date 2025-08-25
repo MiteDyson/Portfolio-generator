@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     const user = await res.json();
     return NextResponse.json(user);
 
-  } catch (error) {
-    return NextResponse.json({ error: 'GitHub user not found or API error.' }, { status: 404 });
+   } catch { // Changed from catch (error)
+    return NextResponse.json({ error: 'An unexpected network error occurred.' }, { status: 500 });
   }
 }
