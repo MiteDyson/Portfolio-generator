@@ -1,4 +1,3 @@
-
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { ProjectCard } from "@/components/ProjectCard";
@@ -11,9 +10,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Initialize the Gemini client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-// NOTE: The PortfolioPageProps interface has been removed to fix the build error.
-
-// ... (extractTechnologies function remains the same)
+/**
+ * Extracts a list of known technologies from a given string (like a README).
+ */
 function extractTechnologies(readmeContent: string): string[] {
   const techKeywords = [
     'Next.js', 'React', 'TypeScript', 'JavaScript', 'Tailwind CSS', 'shadcn/ui',
@@ -31,7 +30,9 @@ function extractTechnologies(readmeContent: string): string[] {
   return Array.from(foundTechs);
 }
 
-// ... (generateSummary function remains the same)
+/**
+ * Generates a short, first-person summary using the Gemini API.
+ */
 async function generateSummary(user: GitHubUser, technologies: string[]): Promise<string> {
   if (!process.env.GEMINI_API_KEY) {
     return user.bio || "A passionate developer exploring new technologies.";
@@ -47,6 +48,9 @@ async function generateSummary(user: GitHubUser, technologies: string[]): Promis
   }
 }
 
+/**
+ * Fetches all necessary data for the portfolio page.
+ */
 async function getGitHubData(username: string): Promise<{ user: GitHubUser; repos: GitHubRepo[]; allTechnologies: string[]; summary: string } | null> {
   try {
     const userRes = await fetch(`https://api.github.com/users/${username}`, {
@@ -55,6 +59,7 @@ async function getGitHubData(username: string): Promise<{ user: GitHubUser; repo
     });
     if (!userRes.ok) return null;
     const user: GitHubUser = await userRes.json();
+
     const reposRes = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=12`, {
       headers: { Authorization: `token ${process.env.GITHUB_API_TOKEN}` },
       next: { revalidate: 3600 }
@@ -62,6 +67,7 @@ async function getGitHubData(username: string): Promise<{ user: GitHubUser; repo
     if (!reposRes.ok) return null;
     let initialRepos: GitHubRepo[] = await reposRes.json();
     initialRepos = initialRepos.filter(repo => !repo.fork);
+
     const reposWithTech = await Promise.all(
       initialRepos.map(async (repo) => {
         try {
@@ -82,21 +88,25 @@ async function getGitHubData(username: string): Promise<{ user: GitHubUser; repo
         return repo;
       })
     );
+    
     const allTechSet = new Set<string>();
     reposWithTech.forEach(repo => {
         if (repo.language) allTechSet.add(repo.language);
         repo.technologies?.forEach(tech => allTechSet.add(tech));
     });
     const limitedTechnologies = Array.from(allTechSet).slice(0, 10);
+    
     const summary = await generateSummary(user, limitedTechnologies);
+
     return { user, repos: reposWithTech, allTechnologies: limitedTechnologies, summary };
   } catch (error) {
     console.error("Failed to fetch GitHub data:", error);
     return null;
   }
-}export default async function PortfolioPage({ params }: { params: { username: string } }) {
+}
 
-
+// This is the main page component with the corrected prop types to prevent build errors.
+export default async function PortfolioPage({ params }: { params: { username: string } }) {
   const data = await getGitHubData(params.username);
 
   if (!data) {
@@ -126,7 +136,7 @@ async function getGitHubData(username: string): Promise<{ user: GitHubUser; repo
         <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">{user.name || user.login}</h1>
         <p className="mt-2 text-lg text-muted-foreground">{user.bio}</p>
         
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
           {allTechnologies.map((tech) => (
             <Badge key={tech} variant="glass" className="flex justify-center text-center">
               {tech}
@@ -135,10 +145,9 @@ async function getGitHubData(username: string): Promise<{ user: GitHubUser; repo
         </div>
       </header>
       
-       <section className="container mx-auto max-w-2xl px-4 py-8">
+      <section className="container mx-auto max-w-2xl px-4 py-8">
         <p className="text-center text-lg italic text-muted-foreground md:text-xl">
-      
-          {`"${summary.trim()}"`}
+          "{summary.trim()}"
         </p>
       </section>
 
