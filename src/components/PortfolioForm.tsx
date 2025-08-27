@@ -15,7 +15,6 @@ import {
   FormControl,
   FormField,
   FormItem,
-  // ✅ FormLabel has been removed from this import
   FormMessage,
 } from "@/components/ui/form";
 
@@ -45,9 +44,14 @@ export function PortfolioForm() {
         throw new Error(errorData.error || "An unknown error occurred.");
       }
       router.push(`/${values.username}`);
-    } catch (error: any) {
+    } catch (error) { // ✅ Changed from 'error: any'
       console.error(error);
-      toast.error(error.message);
+      // ✅ Type-safe error handling
+      let errorMessage = "An unexpected error occurred.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      toast.error(errorMessage);
       setIsLoading(false);
     }
   }
@@ -65,10 +69,8 @@ export function PortfolioForm() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  {/* Since FormLabel is removed, we use a standard label */}
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"></label>
                   <FormControl>
-                    <Input placeholder="Username " {...field} />
+                    <Input placeholder="Username" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
