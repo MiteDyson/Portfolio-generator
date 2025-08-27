@@ -11,7 +11,7 @@ export default function HomePage() {
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <Button variant="outline" size="icon" asChild>
           <a 
-            href="https://github.com/your-username/portfolio-generator" 
+            href="https://github.com/MiteDyson/portfolio-generator" 
             target="_blank" 
             rel="noopener noreferrer"
             aria-label="GitHub Repository"
