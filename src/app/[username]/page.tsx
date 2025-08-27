@@ -10,6 +10,12 @@ import { Button } from "@/components/ui/button";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
+// ✅ Define a precise Props type that includes searchParams to match Next.js internals
+type Props = {
+  params: { username: string };
+  searchParams: { [key: string]: string | string[] | undefined };
+};
+
 function extractTechnologies(readmeContent: string): string[] {
   const techKeywords = [
     'Next.js', 'React', 'TypeScript', 'JavaScript', 'Tailwind CSS', 'shadcn/ui',
@@ -76,9 +82,8 @@ async function getGitHubData(username: string): Promise<{ user: GitHubUser; repo
   }
 }
 
-// ✅ This is the main fix. We accept 'any' props to bypass the error.
-export default async function PortfolioPage(props: any) {
-  const { params } = props; // Safely get params from the props
+// ✅ Use the robust 'Props' type here to satisfy ESLint and TypeScript
+export default async function PortfolioPage({ params }: Props) {
   const data = await getGitHubData(params.username);
 
   if (!data) {
@@ -103,15 +108,21 @@ export default async function PortfolioPage(props: any) {
         <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">{user.name || user.login}</h1>
         <p className="mt-2 text-lg text-muted-foreground">{user.bio}</p>
         
-        <div className="mt-6 flex items-center  gap-2 py-2">
+        {/* ✅ Restored the single-line, scrollable, and centered chip layout */}
+        <div className="mt-6 flex items-center justify-start gap-2 py-2">
           {allTechnologies.map((tech) => (
-            <Badge key={tech} variant="glass" className="flex justify-center text-center">{tech}</Badge>
+            <Badge key={tech} variant="glass" className="flex-shrink-0">
+              {tech}
+            </Badge>
           ))}
         </div>
       </header>
       
       <section className="container mx-auto max-w-2xl px-4 py-8">
-        <p className="text-center text-lg italic text-muted-foreground md:text-xl">{summary.trim()}</p>
+        {/* ✅ Added quotes back to the summary for styling */}
+        <p className="text-center text-lg italic text-muted-foreground md:text-xl">
+          {summary.trim()}
+        </p>
       </section>
 
       <main className="container mx-auto max-w-6xl px-4 pb-16">
