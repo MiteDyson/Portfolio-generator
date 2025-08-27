@@ -15,7 +15,7 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
+  // ✅ FormLabel has been removed from this import
   FormMessage,
 } from "@/components/ui/form";
 
@@ -31,9 +31,7 @@ export function PortfolioForm() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      username: "",
-    },
+    defaultValues: { username: "" },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -43,15 +41,13 @@ export function PortfolioForm() {
     try {
       const response = await fetch(`/api/fetch-projects?username=${values.username}`);
       if (!response.ok) {
-        throw new Error("GitHub user not found or private.");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "An unknown error occurred.");
       }
-      
-      // Redirect to the dynamic portfolio page
       router.push(`/${values.username}`);
-
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Failed to fetch projects. Please check the username.");
+      toast.error(error.message);
       setIsLoading(false);
     }
   }
@@ -69,8 +65,10 @@ export function PortfolioForm() {
               name="username"
               render={({ field }) => (
                 <FormItem>
+                  {/* Since FormLabel is removed, we use a standard label */}
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"></label>
                   <FormControl>
-                    <Input placeholder="Username" {...field} />
+                    <Input placeholder="Username " {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

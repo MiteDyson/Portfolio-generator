@@ -6,13 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import { GitHubRepo, GitHubUser } from "@/lib/types";
 import { Github } from "lucide-react";
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Button } from "@/components/ui/button";
 
 // Initialize the Gemini client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-/**
- * Extracts a list of known technologies from a given string (like a README).
- */
+// Define a precise Props type that includes searchParams to match Next.js internals
+type Props = {
+  params: { username: string };
+  searchParams: { [key: string]: string | string[] | undefined };
+};
+
 function extractTechnologies(readmeContent: string): string[] {
   const techKeywords = [
     'Next.js', 'React', 'TypeScript', 'JavaScript', 'Tailwind CSS', 'shadcn/ui',
@@ -30,13 +34,8 @@ function extractTechnologies(readmeContent: string): string[] {
   return Array.from(foundTechs);
 }
 
-/**
- * Generates a short, first-person summary using the Gemini API.
- */
 async function generateSummary(user: GitHubUser, technologies: string[]): Promise<string> {
-  if (!process.env.GEMINI_API_KEY) {
-    return user.bio || "A passionate developer exploring new technologies.";
-  }
+  if (!process.env.GEMINI_API_KEY) return user.bio || "A passionate developer.";
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   const prompt = `Based on this developer's profile, write a professional and engaging summary in the first person. Keep it concise (around 30 words).\n- Name: ${user.name || user.login}\n- Bio: "${user.bio || 'A passionate developer.'}"\n- Key Technologies: ${technologies.join(', ')}\n\nGenerate the summary now:`;
   try {
@@ -48,56 +47,35 @@ async function generateSummary(user: GitHubUser, technologies: string[]): Promis
   }
 }
 
-/**
- * Fetches all necessary data for the portfolio page.
- */
 async function getGitHubData(username: string): Promise<{ user: GitHubUser; repos: GitHubRepo[]; allTechnologies: string[]; summary: string } | null> {
   try {
-    const userRes = await fetch(`https://api.github.com/users/${username}`, {
-      headers: { Authorization: `token ${process.env.GITHUB_API_TOKEN}` },
-      next: { revalidate: 3600 }
-    });
+    const userRes = await fetch(`https://api.github.com/users/${username}`, { headers: { Authorization: `token ${process.env.GITHUB_API_TOKEN}` }, next: { revalidate: 3600 } });
     if (!userRes.ok) return null;
     const user: GitHubUser = await userRes.json();
-
-    const reposRes = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=12`, {
-      headers: { Authorization: `token ${process.env.GITHUB_API_TOKEN}` },
-      next: { revalidate: 3600 }
-    });
+    const reposRes = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=12`, { headers: { Authorization: `token ${process.env.GITHUB_API_TOKEN}` }, next: { revalidate: 3600 } });
     if (!reposRes.ok) return null;
     let initialRepos: GitHubRepo[] = await reposRes.json();
     initialRepos = initialRepos.filter(repo => !repo.fork);
-
     const reposWithTech = await Promise.all(
       initialRepos.map(async (repo) => {
         try {
-          const readmeRes = await fetch(`https://api.github.com/repos/${repo.full_name}/readme`, {
-            headers: { Authorization: `token ${process.env.GITHUB_API_TOKEN}` },
-            next: { revalidate: 3600 }
-          });
+          const readmeRes = await fetch(`https://api.github.com/repos/${repo.full_name}/readme`, { headers: { Authorization: `token ${process.env.GITHUB_API_TOKEN}` }, next: { revalidate: 3600 } });
           if (readmeRes.ok) {
             const readmeData = await readmeRes.json();
             const readmeContent = Buffer.from(readmeData.content, 'base64').toString();
             repo.technologies = extractTechnologies(readmeContent);
-          } else {
-            repo.technologies = [];
-          }
-        } catch {
-          repo.technologies = [];
-        }
+          } else { repo.technologies = []; }
+        } catch { repo.technologies = []; }
         return repo;
       })
     );
-    
     const allTechSet = new Set<string>();
     reposWithTech.forEach(repo => {
         if (repo.language) allTechSet.add(repo.language);
         repo.technologies?.forEach(tech => allTechSet.add(tech));
     });
     const limitedTechnologies = Array.from(allTechSet).slice(0, 10);
-    
     const summary = await generateSummary(user, limitedTechnologies);
-
     return { user, repos: reposWithTech, allTechnologies: limitedTechnologies, summary };
   } catch (error) {
     console.error("Failed to fetch GitHub data:", error);
@@ -105,8 +83,7 @@ async function getGitHubData(username: string): Promise<{ user: GitHubUser; repo
   }
 }
 
-// This is the main page component with the corrected prop types to prevent build errors.
-export default async function PortfolioPage({ params }: { params: { username: string } }) {
+export default async function PortfolioPage({ params }: Props) {
   const data = await getGitHubData(params.username);
 
   if (!data) {
@@ -116,38 +93,32 @@ export default async function PortfolioPage({ params }: { params: { username: st
   const { user, repos, allTechnologies, summary } = data;
 
   return (
+    // This opening div was missing in your code
     <div className="min-h-screen bg-background">
-      <div className="absolute top-4 right-4 flex items-center gap-4">
-        <a href={user.html_url} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-          <Github className="h-6 w-6 text-muted-foreground transition-colors hover:text-foreground" />
-        </a>
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <Button variant="outline" size="icon" asChild>
+          <a href={user.html_url} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+            <Github className="h-[1.2rem] w-[1.2rem]" />
+          </a>
+        </Button>
         <ThemeToggle />
       </div>
-      
+
       <header className="container mx-auto max-w-4xl px-4 pt-16 pb-8 text-center">
-        <Image
-          src={user.avatar_url}
-          alt={user.login}
-          width={128}
-          height={128}
-          className="mx-auto mb-4 rounded-full border-4 border-primary"
-          priority
-        />
+        <Image src={user.avatar_url} alt={user.login} width={128} height={128} className="mx-auto mb-4 rounded-full border-4 border-primary" priority />
         <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">{user.name || user.login}</h1>
         <p className="mt-2 text-lg text-muted-foreground">{user.bio}</p>
         
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
+        <div className="mt-6 inline-grid grid-cols-5 gap-2">
           {allTechnologies.map((tech) => (
-            <Badge key={tech} variant="glass" className="flex justify-center text-center">
-              {tech}
-            </Badge>
+            <Badge key={tech} variant="glass" className="flex justify-center text-center">{tech}</Badge>
           ))}
         </div>
       </header>
       
       <section className="container mx-auto max-w-2xl px-4 py-8">
         <p className="text-center text-lg italic text-muted-foreground md:text-xl">
-          {summary.trim()}
+          "{summary.trim()}"
         </p>
       </section>
 
