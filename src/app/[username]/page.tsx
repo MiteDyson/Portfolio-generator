@@ -103,19 +103,21 @@ export default async function PortfolioPage({ params }: Props) {
         <ThemeToggle />
       </div>
       
-      <header className="container mx-auto max-w-4xl px-4 pt-16 pb-8 text-center">
+     <header className="container mx-auto max-w-4xl px-4 pt-16 pb-8 text-center">
         <Image src={user.avatar_url} alt={user.login} width={128} height={128} className="mx-auto mb-4 rounded-full border-4 border-primary" priority />
         <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">{user.name || user.login}</h1>
         <p className="mt-2 text-lg text-muted-foreground">{user.bio}</p>
         
-        {/* ✅ Restored the single-line, scrollable, and centered chip layout */}
-        <div className="mt-6 flex items-center justify-start gap-2 py-2">
+       
+        <div className="mt-6 flex items-center justify-center flex-wrap gap-2">
           {allTechnologies.map((tech) => (
-            <Badge key={tech} variant="glass" className="flex-shrink-0">
+            <Badge key={tech} variant="glass">
               {tech}
             </Badge>
           ))}
         </div>
+        
+        
       </header>
       
       <section className="container mx-auto max-w-2xl px-4 py-8">
